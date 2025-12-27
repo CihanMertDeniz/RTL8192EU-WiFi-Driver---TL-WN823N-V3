@@ -1,0 +1,47 @@
+# Kernel module build artifacts
+*.o
+*.ko
+*.mod
+*.mod.c
+*.order
+*.symvers
+*.markers
+.*.cmd
+.tmp_versions/
+Module.symvers
+Module.markers
+modules.order
+
+# Compiled Object files
+*.o.*
+
+# Dependency files
+*.d
+
+# Editor and IDE files
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+
+# Backup files
+*.bak
+*.orig
+*.rej
+
+# Patch files (optional, uncomment if you don't want to track patches)
+# *.patch
+
+# Test and log files
+*.log
+
+# Build directories
+build/
+dist/
+
+# Temporary files
+tmp/
+temp/
