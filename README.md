@@ -93,7 +93,7 @@ sudo apt-get install build-essential linux-headers-$(uname -r) git
 ### Build and Install
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/CihanMertDeniz/RTL8192EU-WiFi-Driver---TL-WN823N-V3.git
 cd rtl8192EU_WiFi_linux_v5.2.19.1_25633.20171222_COEX20171113-0047
 
 # Build
