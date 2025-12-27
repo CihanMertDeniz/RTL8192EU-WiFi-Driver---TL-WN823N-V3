@@ -393,7 +393,11 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset, u8 
 	if (ret != _SUCCESS)
 		goto exit;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef, 0);
+#else
 	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef);
+#endif
 
 #else
 	int freq = rtw_ch2freq(ch);
@@ -571,7 +575,9 @@ static const struct ieee80211_txrx_stypes
 
 static u64 rtw_get_systime_us(void)
 {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0))
+	return ktime_get_boottime_ns() / 1000;
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
 	struct timespec ts;
 	get_monotonic_boottime(&ts);
 	return ((u64)ts.tv_sec * 1000000) + ts.tv_nsec / 1000;
@@ -976,7 +982,15 @@ check_bss:
 		notify_channel = ieee80211_get_channel(wiphy, freq);
 		#endif
 
-		#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+		#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+		roam_info.links[0].bssid = cur_network->network.MacAddress;
+		roam_info.req_ie = pmlmepriv->assoc_req + sizeof(struct rtw_ieee80211_hdr_3addr) + 2;
+		roam_info.req_ie_len = pmlmepriv->assoc_req_len - sizeof(struct rtw_ieee80211_hdr_3addr) - 2;
+		roam_info.resp_ie = pmlmepriv->assoc_rsp + sizeof(struct rtw_ieee80211_hdr_3addr) + 6;
+		roam_info.resp_ie_len = pmlmepriv->assoc_rsp_len - sizeof(struct rtw_ieee80211_hdr_3addr) - 6;
+
+		cfg80211_roamed(padapter->pnetdev, &roam_info, GFP_ATOMIC);
+		#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 		roam_info.bssid = cur_network->network.MacAddress;
 		roam_info.req_ie = pmlmepriv->assoc_req + sizeof(struct rtw_ieee80211_hdr_3addr) + 2;
 		roam_info.req_ie_len = pmlmepriv->assoc_req_len - sizeof(struct rtw_ieee80211_hdr_3addr) - 2;
@@ -2057,6 +2071,7 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy,
 	#if defined(CONFIG_P2P) && ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE))
 	case NL80211_IFTYPE_P2P_CLIENT:
 		is_p2p = _TRUE;
+		__attribute__((__fallthrough__));
 	#endif
 	case NL80211_IFTYPE_STATION:
 		networkType = Ndis802_11Infrastructure;
@@ -2081,6 +2096,7 @@ static int cfg80211_rtw_change_iface(struct wiphy *wiphy,
 	#if defined(CONFIG_P2P) && ((LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE))
 	case NL80211_IFTYPE_P2P_GO:
 		is_p2p = _TRUE;
+		__attribute__((__fallthrough__));
 	#endif
 	case NL80211_IFTYPE_AP:
 		networkType = Ndis802_11APMode;
@@ -7352,7 +7368,9 @@ static struct cfg80211_ops rtw_cfg80211_ops = {
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
 	.mgmt_tx = cfg80211_rtw_mgmt_tx,
-	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
+	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
+		.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
+	#endif
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 35))
 	.action = cfg80211_rtw_mgmt_tx,
 #endif
@@ -7554,7 +7572,7 @@ void rtw_wdev_unregister(struct wireless_dev *wdev)
 
 	rtw_cfg80211_indicate_scan_done(adapter, _TRUE);
 
-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)) || defined(COMPAT_KERNEL_RELEASE)
+	#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)) || defined(COMPAT_KERNEL_RELEASE)) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0))
 	if (wdev->current_bss) {
 		RTW_INFO(FUNC_ADPT_FMT" clear current_bss by cfg80211_disconnected\n", FUNC_ADPT_ARG(adapter));
 		rtw_cfg80211_indicate_disconnect(adapter, 0, 1);

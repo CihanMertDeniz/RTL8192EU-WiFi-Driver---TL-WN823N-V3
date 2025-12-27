@@ -1174,7 +1174,11 @@ u32 _rtw_down_sema(_sema *sema)
 inline void thread_exit(_completion *comp)
 {
 #ifdef PLATFORM_LINUX
-	complete_and_exit(comp, 0);
+	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+		kthread_complete_and_exit(comp, 0);
+	#else
+		complete_and_exit(comp, 0);
+	#endif
 #endif
 
 #ifdef PLATFORM_FREEBSD
@@ -1999,7 +2003,9 @@ static int readFile(struct file *fp, char *buf, int len)
 		return -EPERM;
 
 	while (sum < len) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+		rlen = kernel_read(fp, buf + sum, len - sum, &fp->f_pos);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
 		rlen = __vfs_read(fp, buf + sum, len - sum, &fp->f_pos);
 #else
 		rlen = fp->f_op->read(fp, buf + sum, len - sum, &fp->f_pos);
@@ -2047,15 +2053,19 @@ static int isFileReadable(const char *path, u32 *sz)
 {
 	struct file *fp;
 	int ret = 0;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 	mm_segment_t oldfs;
+#endif
 	char buf;
 
 	fp = filp_open(path, O_RDONLY, 0);
 	if (IS_ERR(fp))
 		ret = PTR_ERR(fp);
 	else {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 		oldfs = get_fs();
 		set_fs(get_ds());
+#endif
 
 		if (1 != readFile(fp, &buf, 1))
 			ret = PTR_ERR(fp);
@@ -2068,7 +2078,9 @@ static int isFileReadable(const char *path, u32 *sz)
 			#endif
 		}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 		set_fs(oldfs);
+#endif
 		filp_close(fp, NULL);
 	}
 	return ret;
@@ -2084,7 +2096,9 @@ static int isFileReadable(const char *path, u32 *sz)
 static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 {
 	int ret = -1;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 	mm_segment_t oldfs;
+#endif
 	struct file *fp;
 
 	if (path && buf) {
@@ -2092,10 +2106,14 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 		if (0 == ret) {
 			RTW_INFO("%s openFile path:%s fp=%p\n", __FUNCTION__, path , fp);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 			oldfs = get_fs();
 			set_fs(get_ds());
+#endif
 			ret = readFile(fp, buf, sz);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 			set_fs(oldfs);
+#endif
 			closeFile(fp);
 
 			RTW_INFO("%s readFile, ret:%d\n", __FUNCTION__, ret);
@@ -2119,7 +2137,9 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 static int storeToFile(const char *path, u8 *buf, u32 sz)
 {
 	int ret = 0;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 	mm_segment_t oldfs;
+#endif
 	struct file *fp;
 
 	if (path && buf) {
@@ -2127,10 +2147,14 @@ static int storeToFile(const char *path, u8 *buf, u32 sz)
 		if (0 == ret) {
 			RTW_INFO("%s openFile path:%s fp=%p\n", __FUNCTION__, path , fp);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 			oldfs = get_fs();
 			set_fs(get_ds());
+#endif
 			ret = writeFile(fp, buf, sz);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 			set_fs(oldfs);
+#endif
 			closeFile(fp);
 
 			RTW_INFO("%s writeFile, ret:%d\n", __FUNCTION__, ret);
@@ -2449,7 +2473,9 @@ u64 rtw_division64(u64 x, u64 y)
 inline u32 rtw_random32(void)
 {
 #ifdef PLATFORM_LINUX
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+	return get_random_u32();
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
 	return prandom_u32();
 #elif (LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18))
 	u32 random_int;

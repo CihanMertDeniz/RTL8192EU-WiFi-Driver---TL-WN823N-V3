@@ -14,6 +14,13 @@ EXTRA_CFLAGS += -Wno-unused-parameter
 EXTRA_CFLAGS += -Wno-unused-function
 EXTRA_CFLAGS += -Wno-unused
 #EXTRA_CFLAGS += -Wno-uninitialized
+EXTRA_CFLAGS += -Wno-implicit-fallthrough
+EXTRA_CFLAGS += -Wno-incompatible-pointer-types
+EXTRA_CFLAGS += -Wno-return-type
+EXTRA_CFLAGS += -Wno-discarded-qualifiers
+EXTRA_CFLAGS += -Wno-implicit-function-declaration
+EXTRA_CFLAGS += -Wno-missing-prototypes
+EXTRA_CFLAGS += -fcf-protection=none
 
 GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
 ifeq ($(GCC_VER_49),1)
@@ -23,6 +30,7 @@ endif
 EXTRA_CFLAGS += -I$(src)/include
 
 EXTRA_LDFLAGS += --strip-debug
+LDFLAGS_MODULE := -r -z unique-symbol
 
 CONFIG_AUTOCFG_CP = n
 
