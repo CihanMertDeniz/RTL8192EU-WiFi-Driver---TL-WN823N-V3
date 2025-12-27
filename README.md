@@ -194,9 +194,9 @@ This driver maintains the original GPL-2.0 license from Realtek/TP-Link.
 
 ## Credits
 
-- Original driver: Realtek Semiconductor Corp. / TP-Link
-- Kernel compatibility patches: Updated for modern kernels (2024)
-
+- [Original driver](https://static.tp-link.com/2018/201805/20180514/TP-Link_Driver_Linux_series8_beta.zip): Realtek Semiconductor Corp. / TP-Link
+- Kernel compatibility patches: Updated for modern kernels (2025)
+- Original driver site link : [Original link](https://www.tp-link.com/us/support/download/tl-wn823n/v3/) 
 ## Disclaimer
 
 This driver is provided as-is. Use at your own risk. While efforts have been made to ensure compatibility and stability, the maintainers are not responsible for any damage or issues arising from its use.
