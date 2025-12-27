@@ -127,9 +127,9 @@ sudo rmmod 8192eu
 ## Supported Devices
 
 This driver supports TP-Link WiFi adapters using the RTL8192EU chipset, including:
-- TP-Link TL-WN821N v5
-- TP-Link TL-WN822N v5
+
 - TP-Link TL-WN823N v2
+- TP-Link TL-WN823N v3
 - And other RTL8192EU-based devices
 
 Check `os_dep/linux/usb_intf.c` for the full list of supported USB IDs.
